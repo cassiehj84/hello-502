@@ -1,0 +1,35 @@
+cd4raw<-read.csv("allvar.csv")
+cd4<-na.omit(cd4raw)
+cd4$sqrtcd4<-sqrt(cd4$CD4PCT)
+cd4$time<-cd4$visage-cd4$baseage
+cd4.new<-group_by(cd4,newpid) %>% 
+  filter(n()>=2) 
+patientID<-unique(cd4.new$newpid)
+library(shiny)
+library(dplyr)
+myui<-shinyUI(fluidPage(
+  titlePanel("Problem 4a,CD4"),sidebarLayout(
+  sidebarPanel(sliderInput(
+    inputId ="number1",
+    label="Please pick how many patients",
+    min=1,max=254,value=1,step=1)),
+  mainPanel(plotOutput("myplot1"))
+)))
+
+
+myserver<-shinyServer(function(input,output){
+   
+  output$myplot1<-renderPlot({
+    cd4.NEW<-filter(cd4.new,newpid==input$number1)
+    ggplot(cd4.NEW,aes(x=time,y=sqrtcd4,color=newpid))+
+      geom_point()+
+      geom_smooth(method="lm",se=FALSE)+
+      theme(legend.position="none")+
+      theme_bw()+
+      labs(x="Time(years)",y="CD4 percentage")
+    
+    
+  })
+})
+
+shinyApp(ui=myui,server=myserver)
