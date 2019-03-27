@@ -1,0 +1,38 @@
+```{r}
+library(shiny)
+library(ggplot2)
+url<-"https://gist.githubusercontent.com/cassiehj84/5f9505761212c5b4adfc0334c3b1dc16/raw/1e614b49eab79c568801902e5638219ff560b532/DelayedFlights.csv"
+delaytime<-read.csv(url)
+delaytime$dlay.min<-as.numeric(delaytime$ArrDelay+delaytime$DepDelay)
+delaytime$dlay.min[delaytime$dlay.min<=0]<-NA 
+keeprows<-sample(nrow(delaytime),500,replace=FALSE)
+dataforshiny<-delaytime[keeprows,]
+ 
+ 
+myui<-shinyUI(fluidPage(
+  titlePanel("The relationship between flight distance and flight delay time"),sidebarLayout(
+    sidebarPanel(
+      sliderInput(
+        inputId ="Distance",label="please pick a flight distance",min=10,max=4000,value=500,step=1
+      )
+    ),
+    sliderInput(
+      inputId="DayOfWeek",label="please pick a day of a week",min=1,max=7,value=2,step=1
+    )
+  ),
+  mainPanel(plotOutput("myplot"))
+))
+
+myserver<-shinyServer(function(input, output){
+ 
+  output$myplot<-renderPlot({
+    ggplot(dataforshiny)+
+  geom_point(aes(x=input$Distance,y=dlay.min,color= input$DayOfWeek))+
+      geom_smooth(aes(x=input$Distance,y=dlay.min,color= input$DayOfWeek),method = "glm",formula=dlay.min~Distance+DayOfWeek,method.args = list(family = "Gamma"),se = FALSE)+
+  labs(x = "Flight Distance",
+       y = "Delay Time",
+       title = "GLM Mode Three")
+  })
+})
+
+shinyApp(ui=myui,server=myserver)
